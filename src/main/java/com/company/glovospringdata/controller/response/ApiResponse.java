@@ -9,4 +9,8 @@ public class ApiResponse <D> {
     private boolean success;
     private D data;
     private List<String> messages;
+
+    public void addMessage(String message) {
+        messages.add(message);
+    }
 }
