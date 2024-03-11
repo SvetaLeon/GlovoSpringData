@@ -1,0 +1,134 @@
+package com.company.glovospringdata.service;
+
+import com.company.glovospringdata.converter.OrderConverter;
+import com.company.glovospringdata.dto.OrderDto;
+import com.company.glovospringdata.model.Order;
+import com.company.glovospringdata.repository.OrderRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class OrderServiceImplTest {
+    private static final int ORDER_ID = 1;
+    private static final Pageable PAGEABLE = Pageable.unpaged();
+
+    @InjectMocks
+    private OrderServiceImpl testInstance;
+
+    @Mock
+    private OrderRepository orderRepository;
+
+    @Mock
+    private OrderConverter orderConverter;
+
+    @Mock
+    private Page<Order> page;
+
+    @Mock
+    private List<Order> orders;
+
+    @Mock
+    private List<OrderDto> orderDtoList;
+
+    @Mock
+    private Order order;
+
+    private OrderDto dto;
+
+    @BeforeEach
+    public void init() {
+        dto = new OrderDto();
+        dto.setId(ORDER_ID);
+        dto.setDate(LocalDate.now());
+        dto.setCost(10.55);
+        dto.setProducts(null);
+    }
+
+    @Test
+    void shouldReturnOrders() {
+        when(orderRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(page.getContent()).thenReturn(orders);
+        when(orderConverter.fromModel(orders)).thenReturn(orderDtoList);
+
+        List<OrderDto> result = testInstance.getOrders(PAGEABLE);
+
+        verify(orderRepository).findAll(PAGEABLE);
+        verify(orderConverter).fromModel(orders);
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldReturnOrderById() {
+        when(orderRepository.findById(anyInt())).thenReturn(Optional.of(order));
+        when(orderConverter.fromModel(order)).thenReturn(dto);
+
+        OrderDto result = testInstance.getOrderById(ORDER_ID);
+
+        verify(orderRepository).findById(ORDER_ID);
+        verify(orderConverter).fromModel(order);
+        assertNotNull(result);
+        assertEquals(ORDER_ID, result.getId());
+    }
+
+    @Test
+    void shouldNotReturnOrderById() {
+        assertThrows(NoSuchElementException.class, () -> {
+            testInstance.getOrderById(ORDER_ID);
+        });
+    }
+
+    @Test
+    void shouldCreateNewOrder() {
+        when(orderConverter.toModel(dto)).thenReturn(order);
+
+        testInstance.saveNewOrder(dto);
+
+        verify(orderConverter).toModel(dto);
+        verify(orderRepository).save(order);
+    }
+
+    @Test
+    void shouldUpdateOrder() {
+        when(orderRepository.findById(anyInt())).thenReturn(Optional.of(order));
+        when(orderConverter.toModel(order, dto)).thenReturn(order);
+
+        testInstance.updateOrder(ORDER_ID, dto);
+
+        verify(orderRepository).findById(ORDER_ID);
+        verify(orderConverter).toModel(order, dto);
+        verify(orderRepository).save(order);
+        assertEquals(ORDER_ID, dto.getId());
+    }
+
+    @Test
+    void shouldNotUpdateOrder() {
+        assertThrows(NoSuchElementException.class, () -> {
+            testInstance.updateOrder(ORDER_ID, dto);
+        });
+    }
+
+    @Test
+    void shouldDeleteOrder() {
+        testInstance.deleteOrder(ORDER_ID);
+
+        verify(orderRepository).deleteById(ORDER_ID);
+        assertEquals(ORDER_ID, dto.getId());
+    }
+}
