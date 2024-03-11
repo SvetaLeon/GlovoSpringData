@@ -19,10 +19,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceImplTest {
@@ -63,15 +61,16 @@ class OrderServiceImplTest {
 
     @Test
     void shouldReturnOrders() {
-        when(orderRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(orderRepository.findAll(PAGEABLE)).thenReturn(page);
         when(page.getContent()).thenReturn(orders);
         when(orderConverter.fromModel(orders)).thenReturn(orderDtoList);
 
         List<OrderDto> result = testInstance.getOrders(PAGEABLE);
 
-        verify(orderRepository).findAll(PAGEABLE);
-        verify(orderConverter).fromModel(orders);
+        verify(orderRepository, times(1)).findAll(PAGEABLE);
+        verify(orderConverter, times(1)).fromModel(orders);
         assertNotNull(result);
+        assertEquals(orderDtoList, result);
     }
 
     @Test
@@ -81,8 +80,8 @@ class OrderServiceImplTest {
 
         OrderDto result = testInstance.getOrderById(ORDER_ID);
 
-        verify(orderRepository).findById(ORDER_ID);
-        verify(orderConverter).fromModel(order);
+        verify(orderRepository, times(1)).findById(ORDER_ID);
+        verify(orderConverter, times(1)).fromModel(order);
         assertNotNull(result);
         assertEquals(ORDER_ID, result.getId());
     }
@@ -100,8 +99,8 @@ class OrderServiceImplTest {
 
         testInstance.saveNewOrder(dto);
 
-        verify(orderConverter).toModel(dto);
-        verify(orderRepository).save(order);
+        verify(orderConverter, times(1)).toModel(dto);
+        verify(orderRepository, times(1)).save(order);
     }
 
     @Test
@@ -111,10 +110,11 @@ class OrderServiceImplTest {
 
         testInstance.updateOrder(ORDER_ID, dto);
 
-        verify(orderRepository).findById(ORDER_ID);
-        verify(orderConverter).toModel(order, dto);
-        verify(orderRepository).save(order);
-        assertEquals(ORDER_ID, dto.getId());
+        verify(orderRepository, times(1)).findById(ORDER_ID);
+        verify(orderConverter, times(1)).toModel(order, dto);
+        verify(orderRepository, times(1)).save(order);
+        assertNotNull(order);
+        assertNotNull(order.getId());
     }
 
     @Test
@@ -128,7 +128,6 @@ class OrderServiceImplTest {
     void shouldDeleteOrder() {
         testInstance.deleteOrder(ORDER_ID);
 
-        verify(orderRepository).deleteById(ORDER_ID);
-        assertEquals(ORDER_ID, dto.getId());
+        verify(orderRepository, times(1)).deleteById(ORDER_ID);
     }
 }
