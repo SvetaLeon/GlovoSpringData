@@ -23,7 +23,7 @@ public class OrderConverter {
                 .build();
     }
 
-    public List<OrderDto> fromModel(Iterable<Order> orders) {
+    public List<OrderDto> fromModel(List<Order> orders) {
         List<OrderDto> orderDtoList = new ArrayList<>();
         for (Order order : orders) {
             orderDtoList.add(fromModel(order));
