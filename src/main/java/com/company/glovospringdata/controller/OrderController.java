@@ -7,10 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -28,10 +27,10 @@ public class OrderController {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(pageNum, pageSize, sort);
         ApiResponse<List<OrderDto>> response = new ApiResponse<>();
-        List<OrderDto> orders = orderService.getOrders(pageable);
-        if (!CollectionUtils.isEmpty(orders)) {
+        List<OrderDto> result = orderService.getOrders(pageable);
+        if (result != null && !result.isEmpty()) {
             response.setSuccess(true);
-            response.setData(orders);
+            response.setData(result);
         }
         return response;
     }
@@ -39,29 +38,57 @@ public class OrderController {
     @GetMapping("/{id}")
     public ApiResponse<OrderDto> getOrderById(@PathVariable Integer id) {
         ApiResponse<OrderDto> response = new ApiResponse<>();
-        OrderDto result = orderService.getOrderById(id);
-        if (result != null) {
+        OrderDto orderDto = orderService.getOrderById(id);
+        if (orderDto != null) {
             response.setSuccess(true);
-            response.setData(result);
+            response.setData(orderDto);
         }
         return response;
     }
 
     @PostMapping()
-    @ResponseStatus(HttpStatus.CREATED)
-    public void createNewOrder(@RequestBody OrderDto dto) {
-        orderService.saveNewOrder(dto);
+    public ApiResponse<OrderDto> createNewOrder(@RequestBody OrderDto dto) {
+        ApiResponse<OrderDto> response = new ApiResponse<>();
+        try {
+            orderService.saveNewOrder(dto);
+            response.setSuccess(true);
+            response.setMessages(Collections.singletonList("Order created"));
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.addMessage("Failed to create order");
+        }
+        return response;
     }
 
     @PutMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateOrderById(@PathVariable Integer id, @RequestBody OrderDto dto) {
-        orderService.updateOrder(id, dto);
+    public ApiResponse<OrderDto> updateOrderById(@PathVariable Integer id, @RequestBody OrderDto dto) {
+        ApiResponse<OrderDto> response = new ApiResponse<>();
+        if (dto != null) {
+            try {
+                orderService.updateOrder(id, dto);
+                response.setSuccess(true);
+                response.setMessages(Collections.singletonList("Order updated"));
+            } catch (Exception e) {
+                response.setSuccess(false);
+                response.addMessage("Failed to update order");
+            }
+        }
+        return response;
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteOrderById(@PathVariable Integer id) {
-        orderService.deleteOrder(id);
+    public ApiResponse<OrderDto> deleteOrderById(@PathVariable Integer id) {
+        ApiResponse<OrderDto> response = new ApiResponse<>();
+        if (id != null) {
+            try {
+                orderService.deleteOrder(id);
+                response.setSuccess(true);
+                response.setMessages(Collections.singletonList("Order deleted"));
+            } catch (Exception e) {
+                response.setSuccess(false);
+                response.addMessage("Failed to delete order");
+            }
+        }
+        return response;
     }
 }
